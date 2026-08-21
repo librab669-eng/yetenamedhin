@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { todayEth } from "@/lib/ethcal";
 import PatientsClient from "./PatientsClient";
 
 export const dynamic = "force-dynamic";
@@ -19,5 +20,8 @@ export default async function PatientsPage() {
     familyId: p.family.ethYear,
   }));
 
-  return <PatientsClient initialPatients={patients} />;
+  // Get current Ethiopian year for dynamic year range
+  const currentEthYear = todayEth().year;
+
+  return <PatientsClient initialPatients={patients} currentEthYear={currentEthYear} />;
 }

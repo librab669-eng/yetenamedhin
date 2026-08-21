@@ -17,12 +17,22 @@ interface PatientOption {
 
 interface PatientsClientProps {
   initialPatients: PatientOption[];
+  currentEthYear: number;
 }
 
-export default function PatientsClient({ initialPatients }: PatientsClientProps) {
+export default function PatientsClient({ initialPatients, currentEthYear }: PatientsClientProps) {
   const { t } = useLang();
   const [query, setQuery] = useState("");
   const [year, setYear] = useState("");
+
+  // Dynamic year range: current year - 10 to current year + 2
+  const yearOptions = useMemo(() => {
+    const years = [];
+    for (let y = currentEthYear + 2; y >= currentEthYear - 10; y--) {
+      years.push(y);
+    }
+    return years;
+  }, [currentEthYear]);
 
   // Local filtering - instant, no flicker
   const filteredPatients = useMemo(() => {
@@ -69,11 +79,9 @@ export default function PatientsClient({ initialPatients }: PatientsClientProps)
             <label className="label">{t("year")}</label>
             <select className="select" value={year} onChange={(e) => setYear(e.target.value)}>
               <option value="">{t("allYears")}</option>
-              {Array.from({ length: 5 }, (_, i) => 2015 + i)
-                .reverse()
-                .map((y) => (
-                  <option key={y} value={y}>{y} EC</option>
-                ))}
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>{y} EC</option>
+              ))}
             </select>
           </div>
         </div>
