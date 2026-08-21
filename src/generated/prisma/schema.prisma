@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Family {
+  id         Int       @id @default(autoincrement())
+  familyCode String    @unique
+  headName   String
+  phone      String?
+  address    String?
+  ethYear    Int
+  status     String    @default("active") // active | closed
+  notes      String?
+  createdAt  DateTime  @default(now())
+  patients   Patient[]
+
+  @@index([ethYear])
+  @@index([familyCode])
+}
+
+model Patient {
+  id             Int       @id @default(autoincrement())
+  familyId       Int
+  family         Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  fullName       String
+  gender         String? // male | female
+  ageOrBirth     String? // age in years or Ethiopian birth year
+  cardNo         String?   @unique
+  relationToHead String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  expenses       Expense[]
+
+  @@index([familyId])
+  @@index([fullName])
+  @@index([cardNo])
+}
+
+model Medicine {
+  id           Int       @id @default(autoincrement())
+  name         String
+  nameAm       String?
+  unit         String    @default("tab")
+  pricePerUnit Decimal   @default(0)
+  isActive     Boolean   @default(true)
+  notes        String?
+  createdAt    DateTime  @default(now())
+  expenses     Expense[]
+
+  @@index([name])
+}
+
+model Expense {
+  id           Int      @id @default(autoincrement())
+  patientId    Int
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  medicineId   Int
+  medicine     Medicine @relation(fields: [medicineId], references: [id])
+  quantity     Decimal  @default(1)
+  unitPrice    Decimal
+  totalCost    Decimal
+  ethDate      String // YYYY-MM-DD in Ethiopian calendar
+  ethYear      Int
+  ethMonth     Int // 1..13 (13 = Pagume)
+  ethDay       Int
+  prescribedBy String?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  @@index([ethDate])
+  @@index([ethYear])
+  @@index([ethMonth])
+  @@index([patientId])
+  @@index([medicineId])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model BackupLog {
+  id        Int      @id @default(autoincrement())
+  fileName  String
+  sizeBytes BigInt
+  kind      String   @default("manual") // manual | auto
+  createdAt DateTime @default(now())
+}
