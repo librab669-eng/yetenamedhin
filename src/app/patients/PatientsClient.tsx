@@ -25,10 +25,11 @@ export default function PatientsClient({ initialPatients, currentEthYear }: Pati
   const [query, setQuery] = useState("");
   const [year, setYear] = useState("");
 
-  // Dynamic year range: current year - 10 to current year + 2
+  // Dynamic year range: from 2000 EC up to current year + 2 (grows over time, no fixed window)
   const yearOptions = useMemo(() => {
     const years = [];
-    for (let y = currentEthYear + 2; y >= currentEthYear - 10; y--) {
+    const startYear = 2000; // Fixed start, no lower bound window
+    for (let y = currentEthYear + 2; y >= startYear; y--) {
       years.push(y);
     }
     return years;
