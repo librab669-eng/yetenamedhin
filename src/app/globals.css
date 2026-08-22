@@ -578,3 +578,193 @@ textarea {
     transform: translateY(0);
   }
 }
+
+/* ---------- Mobile hamburger ---------- */
+.hamburger {
+  display: none;
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  padding: 10px;
+  cursor: pointer;
+  color: var(--text);
+  z-index: 150;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+/* ---------- Responsive: Tablet (<= 900px) ---------- */
+@media (max-width: 900px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .main {
+    padding: 20px 16px;
+  }
+
+  .stat-card .stat-value {
+    font-size: 24px;
+  }
+}
+
+/* ---------- Responsive: Mobile (<= 700px) ---------- */
+@media (max-width: 700px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 100;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    width: 260px;
+    height: 100vh;
+    z-index: 110;
+    transition: left 0.25s ease;
+    background: var(--bg);
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .main {
+    padding: 16px 12px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .page-sub {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: var(--radius-sm);
+  }
+
+  .card-sm {
+    padding: 10px;
+  }
+
+  .grid {
+    gap: 12px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .grid-3 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .row-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .btn-lg {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  .card:has(.table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    font-size: 13px;
+    min-width: 600px;
+  }
+
+  .table th,
+  .table td {
+    padding: 8px 10px;
+  }
+
+  .modal {
+    margin: 12px;
+    padding: 20px;
+    border-radius: var(--radius);
+  }
+
+  .modal-backdrop {
+    padding: 12px;
+  }
+
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .input,
+  .select,
+  .textarea {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .label {
+    font-size: 12px;
+  }
+
+  .stat-card .stat-value {
+    font-size: 22px;
+  }
+
+  .empty-state {
+    padding: 24px 12px;
+  }
+
+  .brand-name {
+    font-size: 15px;
+  }
+}

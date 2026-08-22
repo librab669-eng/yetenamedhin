@@ -137,6 +137,9 @@ export const dict = {
     pageTitle: "Yetena Medhin - Expense & Patient Management",
     loginTitle: "Login",
     loginSubtitle: "Yetena Medhin Hospital Management System",
+    year: "Year",
+    allYears: "All Years",
+    familyHead: "Head of Family",
   },
   am: {
     appName: "የጤና መድህን",
@@ -274,6 +277,9 @@ export const dict = {
     pageTitle: "የጤና መድህን - ወጪና ታካሚ አስተዳደር",
     loginTitle: "መግቢያ",
     loginSubtitle: "የጤና መድህን ሆስፒታል አስተዳደር ሥርዓት",
+    year: "ዓመት",
+    allYears: "ሁሉም ዓመቶች",
+    familyHead: "የቤተሰብ ራስ",
   },
 } as const;
 

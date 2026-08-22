@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, Pill, Receipt, BarChart3, Settings, LogOut, Languages, Hospital } from "lucide-react";
+import { LayoutDashboard, Users, Pill, Receipt, BarChart3, Settings, LogOut, Languages, Hospital, Menu, X } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 
 const navItems = [
@@ -21,6 +21,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [hospitalName, setHospitalName] = useState(t("appName"));
   const [subtitle, setSubtitle] = useState(t("appSubtitle"));
   const [hospitalLogo, setHospitalLogo] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings/hospital-name")
@@ -37,6 +38,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       .catch(() => {});
   }, [t]);
 
+  // Close sidebar on navigation
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   const logout = async () => {
     await fetch("/api/logout", { method: "POST" });
     window.location.href = "/login";
@@ -44,7 +50,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar no-print">
+      <div className={`sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
+
+      <aside className={`sidebar no-print ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-brand">
           <div className="brand-logo">
             {hospitalLogo ? (
@@ -53,10 +61,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <Hospital size={22} />
             )}
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             <div className="brand-name">{hospitalName}</div>
             <div className="brand-sub">{subtitle}</div>
           </div>
+          <button className="hamburger" style={{ display: "flex" }} onClick={() => setSidebarOpen(false)}>
+            <X size={20} />
+          </button>
         </div>
 
         <nav>
@@ -84,7 +95,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="main">{children}</main>
+      <main className="main">
+        <button className="hamburger" onClick={() => setSidebarOpen(true)}>
+          <Menu size={22} />
+        </button>
+        {children}
+      </main>
     </div>
   );
 }

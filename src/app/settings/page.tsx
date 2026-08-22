@@ -21,7 +21,7 @@ export default async function SettingsPage() {
       <div className="grid grid-2">
         <div className="card">
           <h3 className="page-title" style={{ fontSize: 18, marginBottom: 16 }}>General</h3>
-          <form action={updateSettings} encType="multipart/form-data">
+          <form action={updateSettings}>
             <div className="field">
               <label className="label">Hospital Name</label>
               <input className="input" name="hospitalName" defaultValue={get("hospitalName") || ""} placeholder="Yetena Medhin Hospital" />

@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, Pill } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import Layout from "@/components/Layout";
-import { formatEthLong } from "@/lib/ethcal";
-import ExpenseForm from "@/components/ExpenseForm";
+import { deleteExpense } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +27,6 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     );
   }
 
-  const medicines = (await prisma.medicine.findMany({ where: { isActive: true }, orderBy: { name: "asc" } })).map(m => ({
-    ...m,
-    pricePerUnit: Number(m.pricePerUnit),
-  }));
   const total = patient.expenses.reduce((sum, e) => sum + Number(e.totalCost), 0);
 
   return (
@@ -40,37 +35,36 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         <Link href="/patients" className="btn btn-sm btn-ghost">
           <ArrowLeft size={16} /> Back
         </Link>
-        <div className="row">
+        <div className="row" style={{ gap: 8 }}>
           <Link href={`/patients/${id}/edit`} className="btn btn-sm">
             <Pencil size={16} /> Edit
+          </Link>
+          <Link href={`/expenses?patientId=${id}`} className="btn btn-sm btn-primary">
+            <Pill size={16} /> Log Expense
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-2 mb-4">
-        <div className="card">
-          <h1 className="page-title">{patient.fullName}</h1>
-          <div className="text-muted mb-4">
-            Card: {patient.cardNo || "—"} · {patient.gender ? (patient.gender === "male" ? "Male" : "Female") : "—"} · {patient.ageOrBirth || "—"}
-          </div>
-          <div className="grid grid-2">
-            <div className="card-sm">
-              <div className="label">Family Code</div>
-              <b>{patient.family.familyCode}</b>
-              <div className="label mt-2">Head of Family</div>
-              {patient.family.headName}
-            </div>
-            <div className="card-sm">
-              <div className="label">Year Case File</div>
-              <b>{patient.family.ethYear} EC</b>
-              <div className="label mt-2">Total Expenses</div>
-              <b style={{ color: "var(--primary)" }}>{total.toLocaleString()} ETB</b>
-            </div>
-          </div>
-          {patient.notes ? <div className="text-muted mt-4">Notes: {patient.notes}</div> : null}
+      <div className="card mb-4">
+        <h1 className="page-title">{patient.fullName}</h1>
+        <div className="text-muted mb-4">
+          Card: {patient.cardNo || "—"} · {patient.gender ? (patient.gender === "male" ? "Male" : "Female") : "—"} · {patient.ageOrBirth || "—"}
         </div>
-
-        <ExpenseForm patientId={id} medicines={medicines} familyYear={patient.family.ethYear} />
+        <div className="grid grid-2">
+          <div className="card-sm">
+            <div className="label">Family Code</div>
+            <b>{patient.family.familyCode}</b>
+            <div className="label mt-2">Head of Family</div>
+            {patient.family.headName}
+          </div>
+          <div className="card-sm">
+            <div className="label">Year Case File</div>
+            <b>{patient.family.ethYear} EC</b>
+            <div className="label mt-2">Total Expenses</div>
+            <b style={{ color: "var(--primary)" }}>{total.toLocaleString()} ETB</b>
+          </div>
+        </div>
+        {patient.notes ? <div className="text-muted mt-4">Notes: {patient.notes}</div> : null}
       </div>
 
       <div className="card">
@@ -107,10 +101,11 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                   <td>{e.prescribedBy || "—"}</td>
                   <td>
                     <div className="row" style={{ gap: 4 }}>
-                      <ExpenseForm patientId={id} medicines={medicines} familyYear={patient.family.ethYear} expense={e} />
+                      <Link href={`/expenses?patientId=${id}&edit=${e.id}`} className="btn btn-sm btn-ghost">
+                        <Pencil size={14} />
+                      </Link>
                       <form action={async () => {
                         "use server";
-                        const { deleteExpense } = await import("@/app/actions");
                         await deleteExpense(e.id, patient.id);
                       }}>
                         <button className="btn btn-sm btn-danger" type="submit"><Trash2 size={14} /></button>
