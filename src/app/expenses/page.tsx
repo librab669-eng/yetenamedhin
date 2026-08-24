@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Search, X, Trash2 } from "lucide-react";
+import { Search, X, Trash2, Loader2, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 import { todayEth } from "@/lib/ethcal";
 import EthDatePicker from "@/components/EthDatePicker";
 import ExpenseForm from "@/components/ExpenseForm";
-import { deleteExpense, updateExpense } from "@/app/actions";
+import { createExpense, deleteExpense, updateExpense } from "@/app/actions";
 import Layout from "@/components/Layout";
 
 interface PatientOption {
@@ -29,6 +29,14 @@ interface ExpenseRow {
   patient: { id: number; fullName: string; family: { familyCode: string } };
 }
 
+type ToastType = "success" | "error" | "info";
+
+interface Toast {
+  id: number;
+  type: ToastType;
+  message: string;
+}
+
 export default function ExpensesPage() {
   const { t } = useLang();
   const today = useMemo(() => todayEth(), []);
@@ -40,7 +48,16 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<ExpenseRow | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+
+  const showToast = (type: ToastType, message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, type, message }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  };
 
   const searchPatients = useCallback(
     async (q: string) => {
@@ -68,16 +85,6 @@ export default function ExpensesPage() {
     loadExpenses();
   }, [loadExpenses]);
 
-  // Handle edit from URL param
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const editId = params.get("edit");
-    if (editId) {
-      const found = expenses.find(e => e.id === parseInt(editId, 10));
-      if (found) setEditingExpense(found);
-    }
-  }, [expenses]);
-
   useEffect(() => {
     fetch("/api/medicines")
       .then((r) => r.json())
@@ -88,26 +95,109 @@ export default function ExpensesPage() {
   const total = expenses.reduce((s, e) => s + Number(e.totalCost), 0);
 
   const handleDelete = async (id: number, patientId: number) => {
-    await deleteExpense(id, patientId);
-    loadExpenses();
+    setDeletingId(id);
+    try {
+      await deleteExpense(id, patientId);
+      showToast("success", "Expense deleted");
+      loadExpenses();
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to delete");
+    } finally {
+      setDeletingId(null);
+      setDeletingId(null);
+    }
   };
 
   const handleEdit = (expense: ExpenseRow) => {
-    setEditingExpense(expense);
-    const url = new URL(window.location.href);
-    url.searchParams.set("edit", String(expense.id));
-    window.history.pushState({}, "", url);
+    setEditingId(expense.id);
   };
 
   const handleCancelEdit = () => {
-    setEditingExpense(null);
-    const url = new URL(window.location.href);
-    url.searchParams.delete("edit");
-    window.history.pushState({}, "", url);
+    setEditingId(null);
+  };
+
+  const handleSaveEdit = async (expense: ExpenseRow, formData: FormData) => {
+    setSubmittingId(expense.id);
+    try {
+      await updateExpense(expense.id, formData);
+      showToast("success", "Expense updated");
+      setEditingId(null);
+      loadExpenses();
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to update");
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  const handleAddExpense = async (formData: FormData) => {
+    setSubmittingId(0);
+    try {
+      await createExpense(formData);
+      showToast("success", "Expense added");
+      loadExpenses();
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to add");
+    } finally {
+      setSubmittingId(null);
+    }
   };
 
   return (
     <Layout>
+      {/* Toast notifications */}
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 1000, display: "flex", flexDirection: "column", gap: 8 }}>
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className="toast"
+            style={{
+              background: toast.type === "success" ? "var(--success)" : toast.type === "error" ? "var(--danger)" : "var(--primary)",
+              color: "#fff",
+              padding: "14px 20px",
+              borderRadius: "var(--radius-sm)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              animation: "slideUp 0.25s ease",
+              minWidth: 280,
+            }}
+          >
+            {toast.type === "success" && <CheckCircle size={20} />}
+            {toast.type === "error" && <AlertCircle size={20} />}
+            {toast.type === "info" && <Info size={20} />}
+            {toast.message}
+          </div>
+        ))}
+      </div>
+
+      {/* Delete confirmation modal */}
+      {deletingId && (
+        <div className="modal-backdrop open" onClick={() => setDeletingId(null)} style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">{t("delete")}?</h3>
+            </div>
+            <p className="text-muted" style={{ marginBottom: 20 }}>Are you sure you want to delete this expense? This cannot be undone.</p>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setDeletingId(null)}>{t("cancel")}</button>
+              <button
+                className="btn btn-danger"
+                disabled={deletingId === deletingId}
+                onClick={() => {
+                  const expense = expenses.find(e => e.id === deletingId);
+                  if (expense) handleDelete(expense.id, expense.patient.id);
+                }}
+              >
+                {deletingId === deletingId ? <Loader2 size={16} className="spin" /> : t("delete")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h1 className="page-title">{t("expenseList")}</h1>
       <p className="page-sub">{t("dailyExpenses")}</p>
 
@@ -170,8 +260,8 @@ export default function ExpensesPage() {
                 placeholder="YYYY-MM-DD"
               />
             </div>
-            <button className="btn btn-primary" onClick={loadExpenses}>
-              {t("search")}
+            <button className="btn btn-primary" onClick={loadExpenses} disabled={loading}>
+              {loading ? <Loader2 size={16} className="spin" /> : t("search")}
             </button>
           </div>
         </div>
@@ -189,18 +279,12 @@ export default function ExpensesPage() {
       </div>
 
       <div className="grid grid-2 mb-4">
-        {editingExpense ? (
-          <ExpenseForm
-            patientId={selectedPatient?.id}
-            medicines={medicines}
-            expense={editingExpense}
-          />
-        ) : (
-          <ExpenseForm
-            patientId={selectedPatient?.id}
-            medicines={medicines}
-          />
-        )}
+        <ExpenseForm
+          patientId={selectedPatient?.id}
+          medicines={medicines}
+          onSubmit={handleAddExpense}
+          submitting={submittingId === 0}
+        />
       </div>
 
       <div className="card" style={{ overflow: "hidden" }}>
@@ -229,33 +313,54 @@ export default function ExpensesPage() {
               </tr>
             </thead>
             <tbody>
-              {expenses.map((e) => (
-                <tr key={e.id}>
-                  <td style={{ whiteSpace: "nowrap" }}>{e.ethDate}</td>
-                  <td style={{ fontWeight: 600 }}>{e.patient.fullName}</td>
-                  <td>{e.medicine.name}</td>
-                  <td>{Number(e.quantity)} {e.medicine.unit}</td>
-                  <td style={{ fontWeight: 800 }}>{Number(e.totalCost).toLocaleString()} ETB</td>
-                  <td>{e.prescribedBy || "—"}</td>
-                  <td>
-                    <div className="row" style={{ gap: 4 }}>
-                      <button
-                        className="btn btn-sm btn-ghost"
-                        onClick={() => handleEdit(e)}
-                      >
-                        <Search size={14} /> Edit
-                      </button>
-                      <form action={async () => {
-                        await handleDelete(e.id, e.patient.id);
-                      }}>
-                        <button className="btn btn-sm btn-danger" type="submit">
+              {expenses.map((e) =>
+                editingId === e.id ? (
+                  <tr key={e.id}>
+                    <td colSpan={7} style={{ padding: 16 }}>
+                      <div className="row-between mb-2">
+                        <b>{t("editExpense")}</b>
+                        <button className="btn btn-sm btn-ghost" onClick={handleCancelEdit}>
+                          <X size={14} /> {t("cancel")}
+                        </button>
+                      </div>
+                      <ExpenseForm
+                        patientId={e.patient.id}
+                        medicines={medicines}
+                        expense={e}
+                        onSubmit={(fd) => handleSaveEdit(e, fd)}
+                        submitting={submittingId === e.id}
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={e.id}>
+                    <td style={{ whiteSpace: "nowrap" }}>{e.ethDate}</td>
+                    <td style={{ fontWeight: 600 }}>{e.patient.fullName}</td>
+                    <td>{e.medicine.name}</td>
+                    <td>{Number(e.quantity)} {e.medicine.unit}</td>
+                    <td style={{ fontWeight: 800 }}>{Number(e.totalCost).toLocaleString()} ETB</td>
+                    <td>{e.prescribedBy || "—"}</td>
+                    <td>
+                      <div className="row" style={{ gap: 4 }}>
+                        <button
+                          className="btn btn-sm btn-ghost"
+                          onClick={() => handleEdit(e)}
+                          disabled={editingId !== null && editingId !== e.id}
+                        >
+                          <Search size={14} /> Edit
+                        </button>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => setDeletingId(e.id)}
+                          disabled={deletingId !== null || (editingId !== null && editingId !== e.id)}
+                        >
                           <Trash2 size={14} />
                         </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              )}
             </tbody>
             <tfoot>
               <tr>

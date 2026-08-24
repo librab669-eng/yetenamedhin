@@ -11,9 +11,10 @@ interface Props {
   onChange: (year: number, month: number, day: number) => void;
   maxYear?: number;
   minYear?: number;
+  disabled?: boolean;
 }
 
-export default function EthDatePicker({ year, month, day, onChange, maxYear, minYear }: Props) {
+export default function EthDatePicker({ year, month, day, onChange, maxYear, minYear, disabled }: Props) {
   const { lang } = useLang();
 
   const today = useMemo(() => todayEth(), []);
@@ -43,6 +44,7 @@ export default function EthDatePicker({ year, month, day, onChange, maxYear, min
           onChange(year, m, Math.min(day, maxDay));
         }}
         aria-label="month"
+        disabled={disabled}
       >
         {Array.from({ length: 13 }, (_, i) => i + 1).map((m) => (
           <option key={m} value={m}>
@@ -57,6 +59,7 @@ export default function EthDatePicker({ year, month, day, onChange, maxYear, min
         value={day}
         onChange={(e) => onChange(year, month, Number(e.target.value))}
         aria-label="day"
+        disabled={disabled}
       >
         {days.map((d) => (
           <option key={d} value={d}>
@@ -74,6 +77,7 @@ export default function EthDatePicker({ year, month, day, onChange, maxYear, min
           onChange(y, month, Math.min(day, ethDaysInMonth(y, month)));
         }}
         aria-label="year"
+        disabled={disabled}
       >
         {years.map((y) => (
           <option key={y} value={y}>
@@ -86,6 +90,7 @@ export default function EthDatePicker({ year, month, day, onChange, maxYear, min
         type="button"
         className="btn btn-sm"
         onClick={() => onChange(today.year, today.month, today.day)}
+        disabled={disabled}
       >
         {lang === "en" ? "Today" : "ዛሬ"}
       </button>

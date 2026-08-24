@@ -5,7 +5,6 @@ import { Plus, X, AlertCircle } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 import { todayEth, ethDateString } from "@/lib/ethcal";
 import EthDatePicker from "./EthDatePicker";
-import { createExpense, updateExpense } from "@/app/actions";
 
 interface MedicineOption {
   id: number;
@@ -20,6 +19,8 @@ interface ExpenseFormProps {
   medicines: MedicineOption[];
   familyYear?: number;
   expense?: any;
+  onSubmit: (formData: FormData) => Promise<void>;
+  submitting?: boolean;
 }
 
 export default function ExpenseForm({
@@ -27,6 +28,8 @@ export default function ExpenseForm({
   medicines,
   familyYear,
   expense,
+  onSubmit,
+  submitting = false,
 }: ExpenseFormProps) {
   const { t } = useLang();
   const today = useMemo(() => todayEth(), []);
@@ -61,16 +64,14 @@ export default function ExpenseForm({
     return true;
   };
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!validateForm()) return;
+    const formData = new FormData(e.currentTarget);
     try {
-      if (isEdit) {
-        await updateExpense(expense.id, formData);
-      } else {
-        await createExpense(formData);
-      }
+      await onSubmit(formData);
     } catch (err: any) {
-      setError(err.message || t("saveSuccess"));
+      setError(err.message || "Failed");
     }
   };
 
@@ -83,7 +84,7 @@ export default function ExpenseForm({
           {isEdit ? t("editExpense") : t("logExpense")}
         </h3>
         {isEdit && (
-          <button className="btn btn-sm btn-ghost" onClick={() => window.location.reload()}>
+          <button className="btn btn-sm btn-ghost" type="button" onClick={() => window.location.reload()}>
             <X size={14} /> {t("cancel")}
           </button>
         )}
@@ -96,7 +97,7 @@ export default function ExpenseForm({
         </div>
       )}
 
-      <form action={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         {patientId ? <input type="hidden" name="patientId" value={patientId} /> : null}
         {isEdit && <input type="hidden" name="expenseId" value={expense.id} />}
         <input type="hidden" name="ethYear" value={year} />
@@ -111,6 +112,7 @@ export default function ExpenseForm({
             value={medicineId}
             onChange={(e) => { setMedicineId(Number(e.target.value)); setError(null); }}
             required
+            disabled={submitting}
           >
             <option value={0} disabled>
               {t("selectMedicine")}
@@ -126,7 +128,7 @@ export default function ExpenseForm({
         <div className="grid grid-2">
           <div className="field">
             <label className="label">{t("quantity")}</label>
-            <input className="input" name="quantity" type="number" min="0" step="any" defaultValue={quantity} required onChange={(e) => { setQuantity(Number(e.target.value)); setError(null); }} />
+            <input className="input" name="quantity" type="number" min="0" step="any" defaultValue={quantity} required onChange={(e) => { setQuantity(Number(e.target.value)); setError(null); }} disabled={submitting} />
           </div>
           <div className="field">
             <label className="label">{t("unit")}</label>
@@ -145,25 +147,26 @@ export default function ExpenseForm({
             defaultValue={unitPrice}
             placeholder={price ? String(price) : "0.00"}
             onChange={(e) => { setUnitPrice(Number(e.target.value)); setError(null); }}
+            disabled={submitting}
           />
         </div>
 
         <div className="field">
           <label className="label">{t("ethDate")}</label>
-          <EthDatePicker year={year} month={month} day={day} onChange={(y, m, d) => { setYear(y); setMonth(m); setDay(d); setError(null); }} />
+          <EthDatePicker year={year} month={month} day={day} onChange={(y, m, d) => { setYear(y); setMonth(m); setDay(d); setError(null); }} disabled={submitting} />
         </div>
 
         <div className="field">
           <label className="label">{t("prescribedBy")} ({t("optional")})</label>
-          <input className="input" name="prescribedBy" defaultValue={prescribedBy} onChange={(e) => setPrescribedBy(e.target.value)} />
+          <input className="input" name="prescribedBy" defaultValue={prescribedBy} onChange={(e) => setPrescribedBy(e.target.value)} disabled={submitting} />
         </div>
 
         <div className="row-between">
           <div className="text-muted">
             Total: <b style={{ color: "var(--primary)" }}>{((medicineId ? price : 0) * quantity).toLocaleString()} ETB</b>
           </div>
-          <button className="btn btn-primary" type="submit">
-            <Plus size={18} /> {isEdit ? t("save") : t("addExpense")}
+          <button className="btn btn-primary" type="submit" disabled={submitting}>
+            {submitting ? <Plus size={18} className="spin" /> : <Plus size={18} />} {isEdit ? t("save") : t("addExpense")}
           </button>
         </div>
       </form>
