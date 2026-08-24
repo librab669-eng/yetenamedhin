@@ -19,8 +19,8 @@ export default function EthDatePicker({ year, month, day, onChange, maxYear, min
   const today = useMemo(() => todayEth(), []);
 
   const years = useMemo(() => {
-    const max = maxYear ?? today.year + 1;
-    const min = minYear ?? today.year - 80;
+    const max = maxYear ?? today.year + 100;
+    const min = minYear ?? today.year - 200;
     const list: number[] = [];
     for (let y = max; y >= min; y--) list.push(y);
     return list;
