@@ -6,7 +6,7 @@ import { useLang } from "@/lib/lang-context";
 import { todayEth } from "@/lib/ethcal";
 import EthDatePicker from "@/components/EthDatePicker";
 import ExpenseForm from "@/components/ExpenseForm";
-import { deleteExpense } from "@/app/actions";
+import { deleteExpense, updateExpense } from "@/app/actions";
 import Layout from "@/components/Layout";
 
 interface PatientOption {
@@ -40,6 +40,7 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ExpenseRow | null>(null);
 
   const searchPatients = useCallback(
     async (q: string) => {
@@ -67,6 +68,16 @@ export default function ExpensesPage() {
     loadExpenses();
   }, [loadExpenses]);
 
+  // Handle edit from URL param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get("edit");
+    if (editId) {
+      const found = expenses.find(e => e.id === parseInt(editId, 10));
+      if (found) setEditingExpense(found);
+    }
+  }, [expenses]);
+
   useEffect(() => {
     fetch("/api/medicines")
       .then((r) => r.json())
@@ -75,6 +86,25 @@ export default function ExpensesPage() {
   }, []);
 
   const total = expenses.reduce((s, e) => s + Number(e.totalCost), 0);
+
+  const handleDelete = async (id: number, patientId: number) => {
+    await deleteExpense(id, patientId);
+    loadExpenses();
+  };
+
+  const handleEdit = (expense: ExpenseRow) => {
+    setEditingExpense(expense);
+    const url = new URL(window.location.href);
+    url.searchParams.set("edit", String(expense.id));
+    window.history.pushState({}, "", url);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingExpense(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("edit");
+    window.history.pushState({}, "", url);
+  };
 
   return (
     <Layout>
@@ -159,10 +189,18 @@ export default function ExpensesPage() {
       </div>
 
       <div className="grid grid-2 mb-4">
-        <ExpenseForm
-          patientId={selectedPatient?.id}
-          medicines={medicines}
-        />
+        {editingExpense ? (
+          <ExpenseForm
+            patientId={selectedPatient?.id}
+            medicines={medicines}
+            expense={editingExpense}
+          />
+        ) : (
+          <ExpenseForm
+            patientId={selectedPatient?.id}
+            medicines={medicines}
+          />
+        )}
       </div>
 
       <div className="card" style={{ overflow: "hidden" }}>
@@ -200,14 +238,21 @@ export default function ExpensesPage() {
                   <td style={{ fontWeight: 800 }}>{Number(e.totalCost).toLocaleString()} ETB</td>
                   <td>{e.prescribedBy || "—"}</td>
                   <td>
-                    <form action={async () => {
-                      await deleteExpense(e.id, e.patient.id);
-                      loadExpenses();
-                    }}>
-                      <button className="btn btn-sm btn-danger" type="submit">
-                        <Trash2 size={14} />
+                    <div className="row" style={{ gap: 4 }}>
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => handleEdit(e)}
+                      >
+                        <Search size={14} /> Edit
                       </button>
-                    </form>
+                      <form action={async () => {
+                        await handleDelete(e.id, e.patient.id);
+                      }}>
+                        <button className="btn btn-sm btn-danger" type="submit">
+                          <Trash2 size={14} />
+                        </button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))}
