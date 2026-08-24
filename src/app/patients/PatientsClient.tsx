@@ -49,6 +49,9 @@ export default function PatientsClient({ initialPatients, currentEthYear }: Pati
     });
   }, [initialPatients, query, year]);
 
+  const totalCount = initialPatients.length;
+  const yearCount = year ? initialPatients.filter(p => p.familyId === parseInt(year, 10)).length : totalCount;
+
   return (
     <Layout>
       <div className="row-between mb-4">
@@ -84,6 +87,12 @@ export default function PatientsClient({ initialPatients, currentEthYear }: Pati
                 <option key={y} value={y}>{y} EC</option>
               ))}
             </select>
+          </div>
+          <div className="field" style={{ minWidth: 120 }}>
+            <label className="label">{year ? t("year") + " " + t("total") : t("total")}</label>
+            <div className="badge badge-blue" style={{ fontSize: 16, fontWeight: 700, padding: "8px 16px" }}>
+              {year ? yearCount : totalCount} {t("patients")}
+            </div>
           </div>
         </div>
       </div>
