@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, Pill, Receipt, BarChart3, Settings, LogOut, Languages, Hospital, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, Pill, Receipt, BarChart3, Settings, LogOut, Languages, Hospital, Menu } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 
 const navItems = [
@@ -65,9 +65,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="brand-name">{hospitalName}</div>
             <div className="brand-sub">{subtitle}</div>
           </div>
-          <button className="hamburger" style={{ display: "flex" }} onClick={() => setSidebarOpen(false)}>
-            <X size={20} />
-          </button>
         </div>
 
         <nav>
