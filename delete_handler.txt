@@ -1,0 +1,5 @@
+const handleExpenseDelete = (id: number, patientId: number) => {
+  if (window.confirm("Are you sure you want to delete this expense?")) {
+    await handleDelete(id, patientId);
+  }
+}

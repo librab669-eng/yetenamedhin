@@ -80,7 +80,7 @@ export default function ExpensesPage() {
 
   const total = expenses.reduce((s, e) => s + Number(e.totalCost), 0);
 
-  const handleDelete = async (id: number, patientId: number) => {
+const handleDelete = async (id: number, patientId: number) => {
     setDeletingId(id);
     try {
       await deleteExpense(id, patientId);
@@ -90,7 +90,12 @@ export default function ExpensesPage() {
       showToast("error", err.message || "Failed to delete");
     } finally {
       setDeletingId(null);
-      setDeletingId(null);
+    }
+  };
+
+  const handleExpenseDelete = async (id: number, patientId: number) => {
+    if (window.confirm("Are you sure you want to delete this expense?")) {
+      await handleDelete(id, patientId);
     }
   };
 
@@ -301,7 +306,7 @@ export default function ExpensesPage() {
                         </button>
                         <button
                           className="btn btn-sm btn-danger"
-                          onClick={() => setDeletingId(e.id)}
+                          onClick={() => handleExpenseDelete(e.id, e.patient.id)}
                           disabled={deletingId !== null || (editingId !== null && editingId !== e.id)}
                         >
                           <Trash2 size={14} />
