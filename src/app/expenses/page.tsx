@@ -8,6 +8,7 @@ import EthDatePicker from "@/components/EthDatePicker";
 import ExpenseForm from "@/components/ExpenseForm";
 import { createExpense, deleteExpense, updateExpense } from "@/app/actions";
 import Layout from "@/components/Layout";
+import { useToast } from "@/lib/ToastProvider";
 
 interface PatientOption {
   id: number;
@@ -29,16 +30,9 @@ interface ExpenseRow {
   patient: { id: number; fullName: string; family: { familyCode: string } };
 }
 
-type ToastType = "success" | "error" | "info";
-
-interface Toast {
-  id: number;
-  type: ToastType;
-  message: string;
-}
-
 export default function ExpensesPage() {
   const { t } = useLang();
+  const { showToast } = useToast();
   const today = useMemo(() => todayEth(), []);
   const [patientSearch, setPatientSearch] = useState("");
   const [patientResults, setPatientResults] = useState<PatientOption[]>([]);
@@ -50,14 +44,6 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const [submittingId, setSubmittingId] = useState<number | null>(null);
-
-  const showToast = (type: ToastType, message: string) => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, type, message }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
-  };
 
   const searchPatients = useCallback(
     async (q: string) => {
@@ -117,7 +103,6 @@ export default function ExpensesPage() {
   };
 
   const handleSaveEdit = async (expense: ExpenseRow, formData: FormData) => {
-    setSubmittingId(expense.id);
     try {
       await updateExpense(expense.id, formData);
       showToast("success", "Expense updated");
@@ -125,54 +110,21 @@ export default function ExpensesPage() {
       loadExpenses();
     } catch (err: any) {
       showToast("error", err.message || "Failed to update");
-    } finally {
-      setSubmittingId(null);
     }
   };
 
   const handleAddExpense = async (formData: FormData) => {
-    setSubmittingId(0);
     try {
       await createExpense(formData);
       showToast("success", "Expense added");
       loadExpenses();
     } catch (err: any) {
       showToast("error", err.message || "Failed to add");
-    } finally {
-      setSubmittingId(null);
     }
   };
 
   return (
     <Layout>
-      {/* Toast notifications */}
-      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 1000, display: "flex", flexDirection: "column", gap: 8 }}>
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className="toast"
-            style={{
-              background: toast.type === "success" ? "var(--success)" : toast.type === "error" ? "var(--danger)" : "var(--primary)",
-              color: "#fff",
-              padding: "14px 20px",
-              borderRadius: "var(--radius-sm)",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              animation: "slideUp 0.25s ease",
-              minWidth: 280,
-            }}
-          >
-            {toast.type === "success" && <CheckCircle size={20} />}
-            {toast.type === "error" && <AlertCircle size={20} />}
-            {toast.type === "info" && <Info size={20} />}
-            {toast.message}
-          </div>
-        ))}
-      </div>
-
       {/* Delete confirmation modal */}
       {deletingId && (
         <div className="modal-backdrop open" onClick={() => setDeletingId(null)} style={{ background: "rgba(0,0,0,0.5)" }}>
@@ -283,7 +235,6 @@ export default function ExpensesPage() {
           patientId={selectedPatient?.id}
           medicines={medicines}
           onSubmit={handleAddExpense}
-          submitting={submittingId === 0}
         />
       </div>
 
@@ -328,7 +279,6 @@ export default function ExpensesPage() {
                         medicines={medicines}
                         expense={e}
                         onSubmit={(fd) => handleSaveEdit(e, fd)}
-                        submitting={submittingId === e.id}
                       />
                     </td>
                   </tr>
