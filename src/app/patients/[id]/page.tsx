@@ -106,7 +106,9 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                       </Link>
                       <form action={async () => {
                         "use server";
-                        await deleteExpense(e.id, patient.id);
+                        if (window.confirm("Are you sure you want to delete this expense?")) {
+                          await deleteExpense(e.id, patient.id);
+                        }
                       }}>
                         <button className="btn btn-sm btn-danger" type="submit"><Trash2 size={14} /></button>
                       </form>
